@@ -1,10 +1,11 @@
-#lang racket
-
 (require (lib "eopl.ss" "eopl"))
 
 (require parser-tools/lex
          (prefix-in : parser-tools/lex-sre)
          parser-tools/yacc)
+
+(define null 'null)
+(define (null? n) (equal? n 'null))
 
 (define-datatype command command?
   (command-single
@@ -90,6 +91,7 @@
     (exp1 cexp?)
     (exp2 bexp?)))
 
+(define non-negative? (lambda (v) (or (zero? v) (positive? v))))
 
 (define-datatype cexp cexp?
   (cexp-comp
@@ -97,7 +99,7 @@
   (cexp-par
     (expr exp?))
   (cexp-num
-    (pos-num positive?))
+    (pos-num non-negative?))
   (cexp-null
     (null-identifier null?))
   (cexp-var
@@ -115,7 +117,7 @@
 
 (define-datatype lst lst?
   (lst-empty
-    (null-list null?))
+    )
   (lst-non-empty
     (list-vals listvalues?)))
 
@@ -136,7 +138,6 @@
     (list-mem listmem?)))
 
 
-(define program "a = 3; while a < 1 do a = a - 1 end; return a")
 
 (define simple-math-lexer
            (lexer
@@ -155,7 +156,7 @@
             (">" (token-greater))
             ("<" (token-less))
             ("==" (token-eq))
-            ("!=" '(token-noteq))
+            ("!=" (token-noteq))
             ("-" (token-min))
             ("*" (token-mult))
             ("/" (token-div))
@@ -167,7 +168,7 @@
             ("true" (token-true))
             ("false" (token-false))
             ("null" (token-null))
-            ((:: "\"" any-string "\"") (token-string lexeme))
+            ((:: "\"" (:* (:~ "\"")) "\"") (token-string (substring lexeme 1 (- (string-length lexeme) 1))))
             ((:+ alphabetic) (token-id (string->symbol lexeme)))
             (whitespace (simple-math-lexer input-port))
             ((eof) (token-EOF))))
@@ -192,13 +193,11 @@
              (exp ((aexp) (exp-aexp $1)) ((aexp greater aexp) (exp-bigger $1 $3)) ((aexp less aexp) (exp-smaller $1 $3)) ((aexp eq aexp) (exp-equal $1 $3)) ((aexp noteq aexp) (exp-not-equal $1 $3)))
              (aexp ((bexp) (aexp-bexp $1)) ((bexp min aexp) (aexp-minus $1 $3)) ((bexp plus aexp) (aexp-plus $1 $3)))
              (bexp ((cexp) (bexp-cexp $1)) ((cexp mult bexp) (bexp-mult $1 $3)) ((cexp div bexp) (bexp-div $1 $3)))
-             (cexp ((min cexp) (cexp-comp $2)) ((openp exp closep) (cexp-par $2)) ((NUM) (cexp-num  $1)) ((null) (cexp-null)) ((id) (cexp-var  $1)) ((true) (cexp-bool #t)) ((false) (cexp-bool #f)) ((string) (cexp-string $1)) ((lst) (cexp-list $1)) ((id listmem) (cexp-listmem  $1 $2)))
+             (cexp ((min cexp) (cexp-comp $2)) ((openp exp closep) (cexp-par $2)) ((NUM) (cexp-num  $1)) ((null) (cexp-null null)) ((id) (cexp-var  $1)) ((true) (cexp-bool #t)) ((false) (cexp-bool #f)) ((string) (cexp-string $1)) ((lst) (cexp-list $1)) ((id listmem) (cexp-listmem  $1 $2)))
              (lst ((openb listvalues closeb) (lst-non-empty $2)) ((openb closeb) (lst-empty)))
              (listvalues ((exp) (listvalues-single $1)) ((exp and listvalues) (listvalues-multi $1 $3)))
              (listmem ((openb exp closeb) (listmem-single $2)) ((openb exp closeb listmem) (listmem-multi $2 $4)))
              )))
 
 
-(define lex-this (lambda (lexer input) (lambda () (lexer input))))
-(define my-lexer (lex-this simple-math-lexer (open-input-string program)))
-(let ((parser-res (simple-math-parser my-lexer))) parser-res)
+

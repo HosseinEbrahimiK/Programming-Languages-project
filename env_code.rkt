@@ -1,4 +1,3 @@
-#lang racket
 
 (require (lib "eopl.ss" "eopl"))
 
@@ -21,3 +20,7 @@
 (define report-no-binding-found
   (lambda (search-var)
     (eopl:error "No binding for ~s" search-var)))
+
+(define x 1)
+(define y 2)
+
