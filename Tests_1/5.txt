@@ -1,0 +1,4 @@
+A = 4;
+B = [2, "hi", 4];
+res = A > B;
+return res
