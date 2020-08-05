@@ -24,7 +24,7 @@
 
 
 
-(interperet "project-test/bfs/bf10.txt")
+(interperet "project-test/p2/lazy2.txt")
 
 
 
